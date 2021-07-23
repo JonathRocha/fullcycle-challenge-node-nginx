@@ -12,6 +12,9 @@ services:
     networks:
       - node-db
       - node-nginx
+    volumes:
+      - ./app:/usr/src/app
+      - /usr/src/app/node_modules
     depends_on:
       - db
 
