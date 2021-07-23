@@ -1,0 +1,52 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: app
+    container_name: app
+    image: app
+    entrypoint: dockerize -wait tcp://db:3306 -timeout 20s docker-entrypoint.sh
+    command: node server.js
+    tty: true
+    networks:
+      - node-db
+      - node-nginx
+    volumes:
+      - ./app:/usr/src/app
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8
+    container_name: db
+    restart: always
+    tty: true
+    volumes:
+      - ./mysql:/var/lib/mysql
+      - ./initdb.d:/docker-entrypoint-initdb.d
+    environment:
+      - MYSQL_DATABASE=nodedb
+      - MYSQL_ROOT_PASSWORD=secret
+    networks:
+      - node-db
+
+  nginx:
+    build:
+      context: nginx
+    container_name: nginx
+    image: nginx-app
+    entrypoint: dockerize -wait http://app:3000 -timeout 20s /docker-entrypoint.sh
+    command: nginx -g "daemon off";
+    ports:
+      - '8080:80'
+    networks:
+      - node-nginx
+    depends_on:
+      - app
+
+networks:
+  node-nginx:
+    driver: bridge
+  node-db:
+    driver: bridge
